@@ -9,7 +9,6 @@
 #include <uORB/topics/rate_ctrl_status.h>
 #include <uORB/topics/motor_speed.h>
 
-
 //log
 #include <uORB/uORB.h>
 #include <uORB/Publication.hpp>
@@ -43,11 +42,11 @@ public:
         void Controllerinit();
 
         /**
-         * Set attitude controller and attitude ESO gains
+         * Set attitude controller  gains
          */
         void setControllerGain(const matrix::Vector3f &KQ,const matrix::Vector3f &KW);
         /**
-         * Set attitude controller and attitude ESO gains
+         * Set Inertia Matrix of the UAV
          */
         void setInertiaMatrix(const matrix::SquareMatrix<float, 3> &Ib){_I_b = Ib;_I_b_inve = matrix::inv(Ib);}
 
@@ -57,15 +56,6 @@ public:
          */
         void setpropParams(const float prop2force, const float prop2torque, const double arm_length);
 
-        /**
-         * Set hard limit for output rate setpoints
-         * @param rate_limit [rad/s] 3D vector containing limits for roll, pitch, yaw
-         */
-        void setRateLimit(const matrix::Vector3f &rate_limit) { _rate_limit = rate_limit; }
-        /**
-         * Set the integral item of the ESO as zero
-         */
-        void resetESO();
 
         /**
          * Set a new attitude setpoint replacing the one tracked before
@@ -100,11 +90,6 @@ public:
          */
         void update(const matrix::Quatf &q, const matrix::Vector3f &rate, const matrix::Vector3f &tau_static,
                           const float &dt, const bool &landed, matrix::Vector3f &torque,matrix::Vector3f &rates_sp);
-        /**
-         * Set saturation status
-         * @param status message from mixer reporting about saturation
-         */
-        void getRateControlStatus(rate_ctrl_status_s &rate_ctrl_status);
 
         /**
          * get motor speed
@@ -135,6 +120,7 @@ public:
         static void ema_filter_generic(const double raw[], size_t raw_size,
                                const double scale[], size_t scale_rows, size_t scale_cols,
                                double in[], const double alpha[], double out[]);
+
 private:
 
         /**
@@ -143,13 +129,7 @@ private:
          */
         void runAttitudeControl(const matrix::Quatf &q, const matrix::Vector3f &rate,const matrix::Vector3f &tau_static,
                                 const float &dt, matrix::Vector3f& torque,matrix::Vector3f &rates_sp);
-        /**
-         * Run attitude ESO
-         * @param angular rate[rad/s] output tau[N*M]
-         */
-        void UsrAttitudeESO(matrix::Vector3f bm_omega,matrix::Vector3f u,float dt);
 
-        matrix::Vector3f _rate_limit;
         float _yaw_w{0.f}; ///< yaw weight [0,1] to deprioritize caompared to roll and pitch
 
         matrix::Quatf _attitude_setpoint_q; ///< latest known attitude setpoint e.g. from position control
@@ -168,17 +148,8 @@ private:
         matrix::Vector3f _wf_prev;
         matrix::Vector3f _dot_Omega_f;
 
-        struct usr_ESO
-        {
-        matrix::Vector3f bm_rate_esti;                             //ESO
-        matrix::Vector3f bm_rate_esti_dot;
-        matrix::Vector3f bm_gain;
-        matrix::Vector3f delta_esti;
-        matrix::Vector3f delta_esti_dot;
-        } _usr_eso;
 
-
-        struct usr_att_controller                        //controller
+        struct indi_att_controller                        //controller
         {
         matrix::Matrix<float,3, 3> K_xi;
         matrix::Matrix<float,3, 3> K_omega;

@@ -144,48 +144,10 @@ void  Att_Control::runAttitudeControl(const matrix::Quatf &q, const matrix::Vect
 
     Vector3f dot_Omeag_c = _controller_param.K_xi * (euler_sp - euler) + _controller_param.K_omega * (omega_ref - rate) + dot_Omeag_ref;
     Vector3f mu_f = _R_Torque * wprop2_vec;
-    torque = mu_f + _I_b * (dot_Omeag_c - _dot_Omega_f);// 和孙的代码不一样
-    //##########
+    torque = mu_f + _I_b * (dot_Omeag_c - _dot_Omega_f);
     _tau(0) = torque(0);
     _tau(1) = torque(1);
     _tau(2) = torque(2);
-}
-
-void Att_Control::UsrAttitudeESO(matrix::Vector3f bm_omega,matrix::Vector3f u,float dt)
-{
-    Matrix<float,3, 3> ESO_gain;
-    ESO_gain.identity();
-    ESO_gain(0,0)=_usr_eso.bm_gain(0);
-    ESO_gain(1,1)=_usr_eso.bm_gain(1);
-    ESO_gain(2,2)=_usr_eso.bm_gain(2);
-
-    // check
-    setZeroIfNanVector3f(_usr_eso.delta_esti);
-    setZeroIfNanVector3f(_usr_eso.bm_rate_esti);
-    setZeroIfNanVector3f(bm_omega);
-    setZeroIfNanVector3f(u);
-    dt = PX4_ISFINITE(dt)? dt:0.0f;
-
-    _usr_eso.bm_rate_esti_dot=u + _usr_eso.delta_esti + 2.0f*ESO_gain*(bm_omega-_usr_eso.bm_rate_esti);
-    _usr_eso.delta_esti_dot=ESO_gain*ESO_gain*(bm_omega-_usr_eso.bm_rate_esti);
-    _usr_eso.bm_rate_esti=_usr_eso.bm_rate_esti+_usr_eso.bm_rate_esti_dot*dt;
-    _usr_eso.delta_esti=_usr_eso.delta_esti+_usr_eso.delta_esti_dot*dt;
-}
-
-void Att_Control::resetESO()
-{
-    _usr_eso.bm_rate_esti={0.0f,0.0f,0.0f};
-    _usr_eso.bm_rate_esti_dot={0.0f,0.0f,0.0f};
-    _usr_eso.delta_esti={0.0f,0.0f,0.0f};
-    _usr_eso.delta_esti_dot={0.0f,0.0f,0.0f};
-    _tau={0.0f,0.0f,0.0f};
-}
-
-void Att_Control::getRateControlStatus(rate_ctrl_status_s &rate_ctrl_status)
-{
-    rate_ctrl_status.rollspeed_integ = _usr_eso.delta_esti(0);
-    rate_ctrl_status.pitchspeed_integ = _usr_eso.delta_esti(1);
-    rate_ctrl_status.yawspeed_integ = _usr_eso.delta_esti(2);
 }
 
 void Att_Control::setEMAFilterParams(){

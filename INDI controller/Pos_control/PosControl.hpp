@@ -114,10 +114,10 @@ public:
          */
         void setpropParams(const float prop2force, const float prop2torque){_K_f = prop2force; _K_t = prop2torque;};
         /**
-         * Set the controller gains and ESO gains
+         * Set the mass of the uav
          * Find detials from my paper
          */
-        void setMasses(const float m_multrotor, const float m_manipulator){_Mb = m_multrotor; _SUM_mi = m_manipulator;};
+        void setMasses(const float m_multrotor){_Mb = m_multrotor;};
         /**
          * Set the hover thrust of the uav
          * Find detials from my paper
@@ -126,7 +126,6 @@ public:
 
         void setControlParas(const matrix::Vector3f &Kx, const matrix::Vector3f &Kv, const matrix::Vector3f &Ka);
 
-        void setESOParas(const matrix::Vector3f &ESO_v);
         /**
          * Set the maximum velocity to execute with feed forward and position control
          * @param vel_horizontal horizontal velocity limit
@@ -270,7 +269,6 @@ private:
         float _K_t;
         // Masses of multirotor and manipulator
         float _Mb;
-        float _SUM_mi;
         float _hover_thr;
         matrix::Vector3f g = matrix::Vector3f(0, 0,G);
 
@@ -306,18 +304,4 @@ private:
         float _yaw_sp{}; /**< desired heading */
         float _yawspeed_sp{}; /** desired yaw-speed */
         matrix::Vector3f delta_v;
-        struct usr_ESO
-        {
-        matrix::Vector3f pos_est;
-        matrix::Vector3f vel_est;
-        matrix::Vector3f delta_est;
-        matrix::Matrix3f gain_ESO;
-        void setZero(matrix::Vector3f pos,matrix::Vector3f vel)
-        {
-                pos_est = pos;
-                vel_est  = vel;
-                delta_est.setZero();
-        }
-        } _usr_eso;
-        void PositionESO(matrix::Vector3f pos_in,matrix::Vector3f f,float dt);
 };

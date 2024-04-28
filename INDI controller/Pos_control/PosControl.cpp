@@ -23,12 +23,6 @@ void PosControl::setControlParas(const matrix::Vector3f &Kx, const matrix::Vecto
     _contolParas.K_a(1,1) = Ka(1);
     _contolParas.K_a(2,2) = Ka(2);
 }
-void PosControl::setESOParas(const matrix::Vector3f &ESO_v)
-{
-    _usr_eso.gain_ESO(0,0)= ESO_v(0);
-    _usr_eso.gain_ESO(1,1)= ESO_v(1);
-    _usr_eso.gain_ESO(2,2)= ESO_v(2);
-}
 
 void PosControl::setVelocityLimits(const float vel_horizontal, const float vel_up, const float vel_down)
 {
@@ -257,7 +251,6 @@ void PosControl::_positionControl(const matrix::Quatf &q,const matrix::Vector3f 
         /* Scale thrust assuming hover thrust produces standard gravity
         * from PX4:        float collective_thrust = _acc_sp(2) * (_hover_thrust / CONSTANTS_ONE_G) - _hover_thrust;
         * old version:     float collective_thrust = _acc_sp(2) * (_hover_thrust / G) - _hover_thrust;
-        * newest version:  float collective_thrust = (_acc_sp(2) - G) * (_Mb + _SUM_mi);
         * result: PX4 is right. Only the codes from PX4 can run well.
         */
         float collective_thrust = _acc_cal(2) * (_hover_thr / CONSTANTS_ONE_G) - _hover_thr;
@@ -320,24 +313,6 @@ bool PosControl::_updateSuccessful()
         valid = valid && PX4_ISFINITE(_thr_sp(0)) && PX4_ISFINITE(_thr_sp(1)) && PX4_ISFINITE(_thr_sp(2));
         return valid;
 }
-
-void PosControl::PositionESO(matrix::Vector3f pos_in,matrix::Vector3f u,float dt)
-{
-    // check
-    ControlMath::setZeroIfNanVector3f(_usr_eso.pos_est);
-    ControlMath::setZeroIfNanVector3f(_usr_eso.vel_est);
-    ControlMath::setZeroIfNanVector3f(_usr_eso.delta_est);
-    ControlMath::setZeroIfNanVector3f(pos_in);
-    ControlMath::setZeroIfNanVector3f(u);
-    dt = PX4_ISFINITE(dt)? dt:0.0f;
-    Vector3f p_est_dot = _usr_eso.vel_est + 3.0f * _usr_eso.gain_ESO * (pos_in - _usr_eso.pos_est);
-    Vector3f v_est_dot = u + _usr_eso.delta_est  + 3.0f * _usr_eso.gain_ESO * _usr_eso.gain_ESO * (pos_in - _usr_eso.pos_est);
-    Vector3f d_est_dot = _usr_eso.gain_ESO * _usr_eso.gain_ESO * _usr_eso.gain_ESO * (pos_in - _usr_eso.pos_est);
-    _usr_eso.pos_est = _usr_eso.pos_est  + p_est_dot*dt;
-    _usr_eso.vel_est = _usr_eso.vel_est  + v_est_dot*dt;
-    _usr_eso.delta_est = _usr_eso.delta_est  + d_est_dot*dt;
-}
-
 
 void PosControl::getLocalPositionSetpoint(vehicle_local_position_setpoint_s &local_position_setpoint) const
 {
